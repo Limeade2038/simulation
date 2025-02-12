@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Flip Payout Simulation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function simulateGame() {
+            let trials = parseInt(document.getElementById("trials").value);
+            let payouts = [];
+            let cost = 5;
+            let totalCost = trials * cost;
+            
+            for (let i = 0; i < trials; i++) {
+                let flips = [];
+                let payout = 32;
+
+                for (let j = 0; j < 5; j++) {
+                    let flip = Math.random() < 0.5 ? "H" : "T";
+                    flips.push(flip);
+                    if (flip === "H") {
+                        payout = Math.pow(2, j + 1);
+                        break;
+                    }
+                }
+                payouts.push(payout);
+            }
+
+            displayResults(payouts, totalCost);
+        }
+
+        function displayResults(payouts, totalCost) {
+            let resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "";
+            
+            let counts = {};
+            let aboveThresholdCount = 0;
+            let totalPayoff = payouts.reduce((a, b) => a + b, 0);
+            
+            payouts.forEach(function(p) {
+                counts[p] = (counts[p] || 0) + 1;
+                if (p > 5) {
+                    aboveThresholdCount++;
+                }
+            });
+
+            let probabilityAboveThreshold = (aboveThresholdCount / payouts.length * 100).toFixed(2);
+
+            let histogram = "<h3>Histogram of Payouts</h3><canvas id='histogramChart'></canvas>";
+            resultsDiv.innerHTML = histogram;
+
+            let summary = `<h3>Summary Statistics</h3>
+                <p>Min: ${Math.min(...payouts)}</p>
+                <p>Max: ${Math.max(...payouts)}</p>
+                <p>Average Payoff: ${(totalPayoff / payouts.length).toFixed(2)}</p>
+                <p>Probability of Earning More than $5: ${probabilityAboveThreshold}%</p>
+                <p>Total Cost of Playing: $${totalCost}</p>
+                <p>Total Payoff: $${totalPayoff}</p>
+                <h3>Cost vs Payoff</h3>
+                <canvas id='costPayoffChart'></canvas>`;
+            resultsDiv.innerHTML += summary;
+            
+            drawHistogram(counts);
+            drawCostPayoffChart(totalCost, totalPayoff);
+        }
+
+        function drawHistogram(counts) {
+            let ctx = document.getElementById("histogramChart").getContext("2d");
+            let labels = Object.keys(counts).sort((a, b) => a - b);
+            let data = labels.map(label => counts[label]);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Frequency',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawCostPayoffChart(totalCost, totalPayoff) {
+            let ctx = document.getElementById("costPayoffChart").getContext("2d");
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Cost', 'Total Payoff'],
+                    datasets: [{
+                        label: 'Amount ($)',
+                        data: [totalCost, totalPayoff],
+                        backgroundColor: ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)'],
+                        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Coin Flip Payout Simulation</h1>
+    <label for="trials">Number of Trials:</label>
+    <input type="number" id="trials" value="1000" min="1">
+    <button onclick="simulateGame()">Run Simulation</button>
+    <div id="results"></div>
+</body>
+</html>
